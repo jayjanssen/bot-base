@@ -51,7 +51,7 @@ exports.redis_disposer = (prefix) ->
   redis_connection(prefix).disposer (rclient) ->
     rclient.quit()
 
-exports.logger = (label, level=process.env.BOT_LOG_LEVEL) ->
+exports.logger = (label, level=process.env.LOG_LEVEL) ->
   logger = new winston.Logger {
     levels: winston.config.syslog.levels
     exitOnError: true
@@ -59,7 +59,6 @@ exports.logger = (label, level=process.env.BOT_LOG_LEVEL) ->
       'level': level
       'label': label 
       'colorize': true
-      'timestamp': () -> moment().format 'dd HH:mm:ss'
     }) ]
   }
 
