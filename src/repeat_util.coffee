@@ -13,11 +13,12 @@ logger.debug util.inspect process.env
 
 argv = require('minimist')(process.argv.slice(2), {
   stopEarly: true
-  strings: ['interval','timeout','lock']
+  strings: ['interval','timeout','lock','delay']
   alias: {
     'interval': 'i'
     'timeout': 't'
     'lock': 'l'
+    'delay': 'd'
   }
   default: {
     'timeout': 3600
@@ -32,6 +33,7 @@ unless argv.i? and argv._? and argv._.length > 0
 
 interval = argv.i
 timeout = argv.t if argv.t?
+delay = argv.d if argv.d?
 
 full_command = argv._
 short_command = full_command[0]
@@ -143,4 +145,11 @@ run_sub_process = () -> new Promise (resolve, reject) ->
 
 
 logger.notice "Repeating #{short_command} every #{interval} seconds"
-cycle()
+
+
+unless delay?
+  logger.debug "No delay"
+  cycle()
+else
+  logger.notice "Waiting for #{delay} seconds to start"
+  setTimeout cycle, delay * 1000
