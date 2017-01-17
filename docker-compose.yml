@@ -1,0 +1,14 @@
+version: '2'
+
+services:
+  redis:
+    image: convox/redis
+    ports: 
+      - 6379
+    volumes:
+      - /data
+  test:
+    build: .
+    command: /bot/repeat_util.coffee -i 1 -- echo "Hello, world!"
+    links:
+      - redis
