@@ -12,12 +12,12 @@ logger = utils.logger '', process.env.REPEAT_LOG_LEVEL
 logger.debug util.inspect process.env
 
 argv = require('minimist')(process.argv.slice(2), {
-  boolean: ['lp', 'zd']
   stopEarly: true
-  strings: ['interval','timeout']
+  strings: ['interval','timeout','lock']
   alias: {
     'interval': 'i'
     'timeout': 't'
+    'lock': 'l'
   }
   default: {
     'timeout': 3600
@@ -54,8 +54,11 @@ get_lock_disposers = (rclient) ->
   }
 
   keys = [key]
-  keys.push 'liquidplanner_api' if argv.lp
-  keys.push 'zendesk_api' if argv.zd
+
+  if typeof argv.lock is 'string'
+    keys.push argv.lock
+  else
+    keys.push lock for lock in argv.lock
 
   logger.debug "Acquiring locks on #{keys.join ', '}"
   keys.map (key) ->
