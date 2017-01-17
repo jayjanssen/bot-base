@@ -6,7 +6,8 @@ Promise = require 'bluebird'
 child_process = require 'child_process'
 Redlock = require 'redlock'
 
-logger = utils.logger ''
+process.env.REPEAT_LOG_LEVEL ?= 'info'
+logger = utils.logger '', process.env.REPEAT_LOG_LEVEL
 
 logger.debug util.inspect process.env
 

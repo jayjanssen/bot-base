@@ -9,6 +9,8 @@ services:
       - /data
   test:
     build: .
+    environment:
+      - REPEAT_LOG_LEVEL
     command: /bot/repeat_util.coffee -i 1 -- echo "Hello, world!"
     links:
       - redis
