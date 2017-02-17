@@ -27,6 +27,13 @@ exports.vault = require("node-vault") {
   endpoint: process.env.VAULT_ADDR
   token: process.env.VAULT_TOKEN
 }
+
+class NotCachedError extends Error
+  constructor: (@message) ->
+    @name = "NotCachedError"
+    Error.captureStackTrace this, NotCachedError
+global.NotCachedError = NotCachedError
+
 exports.vault.get = (path) ->
   exports.vault.read "#{process.env.VAULT_PATH}#{path}"
 
