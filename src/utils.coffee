@@ -48,8 +48,7 @@ redis_connection = (prefix) ->
         return new Error("Retry time exhausted") if options.total_retry_time > 1000 * 60 * 60
         return Math.max options.attempt * 100, 3000
     }
-    rclient.on 'error', (e) ->
-      reject e
+    rclient.on 'error', reject
     rclient.on 'ready', () ->
       resolve rclient
 exports.redis_connection = redis_connection
@@ -189,7 +188,7 @@ exports.setup_obj_store_and_caching = (obj_name, lib_name, rclient, logger, obj_
       logger.warning "Unfullilled SCAN cursor" if results[0] != '0'
       set_ids = {}
       set_ids[id] = true for id, i in results[1] when i % 2 != 0
-      throw new NoResultsError unless Object.keys(set_ids).length > 0
+      throw new NoResultsError 'no results' unless Object.keys(set_ids).length > 0
       rclient.sunionAsync Object.keys( set_ids )
     .map get_key
     .catch NoResultsError, () ->
@@ -213,7 +212,7 @@ exports.setup_obj_store_and_caching = (obj_name, lib_name, rclient, logger, obj_
     .then (value) ->
       if value > 0
         every = value
-        throw new TTLNotExpiredError 
+        throw new TTLNotExpiredError 'no need to refresh'
     .then () ->
       logger.profile cache_name
       cache_objs()
@@ -240,7 +239,7 @@ exports.setup_obj_store = (obj_name, lib_name, rclient, logger, obj_ttl, get_one
     key = "#{obj_name}:#{id}"
     get_cache(key)
     .then (json_str) ->
-      throw new NotCachedError unless json_str?
+      throw new NotCachedError "#{key} was not cached" unless json_str?
       logger.debug "#{key} was cached"
       JSON.parse json_str
     .catch NotCachedError, (err) ->
