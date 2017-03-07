@@ -97,7 +97,7 @@ cycle = () ->
         rclient.multi().set(ttlkey, true).expire(ttlkey, interval).execAsync()
       .then () ->
         sequential_errors = 0
-        logger.notice '.'
+        logger.info '.'
       .catch Redlock.LockError, (err) ->
         logger.warning "Could not get lock: #{err.message}" 
         wait = 1
