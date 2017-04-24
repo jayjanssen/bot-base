@@ -71,28 +71,36 @@ sequential_errors = 0
 cycle = () -> 
   wait = interval
   Promise.using utils.redis_disposer('repeat_'), (rclient) ->
-    rclient.ttlAsync(ttlkey).then (time_left) ->
+    rclient.ttlAsync(ttlkey)
+    .then (time_left) ->
+      delay_int = null
       throw new TTLNotExpiredError time_left if time_left > 5
-      logger.debug "Trying locks"
 
-      delay_int = setInterval (-> logger.warning "Locking delayed, still trying"), 30000
-      Promise.using get_lock_disposers(rclient), (locks) ->
-        logger.debug "Got locks"
-        logger.debug util.inspect locks
-        clearInterval delay_int
+      Promise.try () ->
+        if locks? and locks.length > 0
 
-        extend_locks = () ->
-          Promise.map locks, (lock) ->
-            lock.extend 10000
-          .then () ->
-            logger.debug "Locks extended"
-          .catch (err) ->
-            logger.debug "Extending locks error: #{err}"
-        renew_int = setInterval extend_locks, 5000
+          logger.debug "Trying locks"
 
-        run_sub_process()
-        .finally () ->
-          clearInterval renew_int
+          delay_int = setInterval (-> logger.warning "Locking delayed, still trying"), 30000
+          Promise.using get_lock_disposers(rclient), (locks) ->
+            logger.debug "Got locks"
+            logger.debug util.inspect locks
+            clearInterval delay_int
+
+            extend_locks = () ->
+              Promise.map locks, (lock) ->
+                lock.extend 10000
+              .then () ->
+                logger.debug "Locks extended"
+              .catch (err) ->
+                logger.debug "Extending locks error: #{err}"
+            renew_int = setInterval extend_locks, 5000
+
+            run_sub_process()
+            .finally () ->
+              clearInterval renew_int
+        else
+          run_sub_process()
       .then () ->
         rclient.multi().set(ttlkey, true).expire(ttlkey, interval).execAsync()
       .then () ->
@@ -109,7 +117,7 @@ cycle = () ->
           process.exit 11
         wait = 10
       .finally () ->
-        clearInterval delay_int
+        clearInterval delay_int if delay_int?
   .catch TTLNotExpiredError, (err) ->
     logger.notice "#{short_command} run recently, running again in #{err.message}"
     wait = err.message
