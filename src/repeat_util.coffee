@@ -69,47 +69,52 @@ get_lock_disposers = (rclient) ->
 sequential_errors = 0
 
 cycle = () -> 
+  logger.debug "Cycle start"
   wait = interval
   Promise.using utils.redis_disposer('repeat_'), (rclient) ->
+    logger.debug "Checking ttl"
+
     rclient.ttlAsync(ttlkey).then (time_left) ->
       throw new TTLNotExpiredError time_left if time_left > 5
-      logger.debug "Trying locks"
+      if locks?
 
-      delay_int = setInterval (-> logger.warning "Locking delayed, still trying"), 30000
-      Promise.using get_lock_disposers(rclient), (locks) ->
-        logger.debug "Got locks"
-        logger.debug util.inspect locks
-        clearInterval delay_int
+        logger.debug "Trying locks"
 
-        extend_locks = () ->
-          Promise.map locks, (lock) ->
-            lock.extend 10000
-          .then () ->
-            logger.debug "Locks extended"
-          .catch (err) ->
-            logger.debug "Extending locks error: #{err}"
-        renew_int = setInterval extend_locks, 5000
+        delay_int = setInterval (-> logger.warning "Locking delayed, still trying"), 30000
+        Promise.using get_lock_disposers(rclient), (locks) ->
+          logger.debug "Got locks"
+          logger.debug util.inspect locks
+          clearInterval delay_int
 
-        run_sub_process()
-        .finally () ->
-          clearInterval renew_int
-      .then () ->
-        rclient.multi().set(ttlkey, true).expire(ttlkey, interval).execAsync()
-      .then () ->
-        sequential_errors = 0
-        logger.info '.'
-      .catch Redlock.LockError, (err) ->
-        logger.warning "Could not get lock: #{err.message}" 
-        wait = 1
-      .catch (err) ->
-        logger.error "subprocess error: #{err.message}"
-        sequential_errors += 1
-        if sequential_errors > 5
-          logger.error "Subprocess had #{sequential_errors} in a row, aborting container"
-          process.exit 11
-        wait = 10
-      .finally () ->
-        clearInterval delay_int
+          extend_locks = () ->
+            Promise.map locks, (lock) ->
+              lock.extend 10000
+            .then () ->
+              logger.debug "Locks extended"
+            .catch (err) ->
+              logger.debug "Extending locks error: #{err}"
+          renew_int = setInterval extend_locks, 5000
+
+          run_sub_process()
+          .finally () ->
+            clearInterval renew_int
+      else
+        run_sub_process() 
+    .then () ->
+      rclient.multi().set(ttlkey, true).expire(ttlkey, interval).execAsync()
+    .then () ->
+      sequential_errors = 0
+      logger.info '.'
+    .catch Redlock.LockError, (err) ->
+      logger.warning "Could not get lock: #{err.message}" 
+      wait = 1
+    .catch (err) ->
+      logger.error "subprocess error: #{err.message}"
+      sequential_errors += 1
+      if sequential_errors > 5
+        logger.error "Subprocess had #{sequential_errors} in a row, aborting container"
+        process.exit 11
+      wait = 10
   .catch TTLNotExpiredError, (err) ->
     logger.notice "#{short_command} run recently, running again in #{err.message}"
     wait = err.message
