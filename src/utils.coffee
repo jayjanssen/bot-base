@@ -22,11 +22,6 @@ class TTLNotExpiredError extends Error
     @name = "TTLNotExpiredError"
     Error.captureStackTrace this, TTLNotExpiredError
 global.TTLNotExpiredError = TTLNotExpiredError
-exports.vault = require("node-vault") {
-  apiVersion: 'v1'
-  endpoint: process.env.VAULT_ADDR
-  token: process.env.VAULT_TOKEN
-}
 
 class NotCachedError extends Error
   constructor: (@message) ->
@@ -34,6 +29,11 @@ class NotCachedError extends Error
     Error.captureStackTrace this, NotCachedError
 global.NotCachedError = NotCachedError
 
+exports.vault = require("node-vault") {
+  apiVersion: 'v1'
+  endpoint: process.env.VAULT_ADDR
+  token: process.env.VAULT_TOKEN
+}
 exports.vault.get = (path) ->
   exports.vault.read "#{process.env.VAULT_PATH}#{path}"
 
