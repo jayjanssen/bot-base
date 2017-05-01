@@ -68,45 +68,7 @@ exports.logger = (label, level=process.env.LOG_LEVEL) ->
     }) ]
   }
 
-  logger.log_handle_info = (title, message, description) ->  
-    slack_channel = null
-    slack_user = null
-
-    slack_bot.get_user(message.user).then (user) ->
-      slack_user = user
-      slack_bot.get_channel message.channel
-    .then (chan) ->
-      slack_channel = chan
-    .finally () ->
-      usr = message.user
-      chan = message.channel
-      str = "#{title} Request"
-
-      if slack_user?
-        str += " by #{slack_user.name} (#{message.user})"
-        usr = slack_user.name
-      else
-        str += " by #{message.user}"
-
-      if slack_channel?
-        str += " from #{slack_channel.name} (#{message.channel})"
-        chan = slack_channel.name
-      else 
-        str += " from #{message.channel}"
-
-      str += ": #{description} " if description?
-      logger.info str
-
-      Promise.using exports.redis_disposer('handler_'), (rclient) ->
-        rclient.multi()
-        .zincrby "hits", 1, "#{label}_#{title}"
-        .zincrby "user_hits_#{label}_#{title}", 1, usr
-        .zincrby "channel_hits_#{label}_#{title}", 1, chan
-        .execAsync()
-
   logger
-
-
 
 # obj_name: 'string'
 # lib_name: 'string'
