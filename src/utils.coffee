@@ -165,7 +165,7 @@ exports.setup_obj_store_and_caching = (obj_name, lib_name, rclient, logger, obj_
   global[lib_name]["get_#{obj_name}"] = get_object
   global[lib_name]["search_#{obj_name}"] = search_object
   global[lib_name]["find_#{obj_name}"] = find_object
-  global[lib_name]["cache_#{obj_name}"] = cache_object
+  global[lib_name]["cache_#{obj_name}"] = cache_obj
 
   # Setup cache refresher
 
