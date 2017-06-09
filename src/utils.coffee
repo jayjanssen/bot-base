@@ -61,9 +61,9 @@ exports.logger = (label, level=process.env.LOG_LEVEL) ->
   logger = new winston.Logger {
     levels: winston.config.syslog.levels
     exitOnError: true
-    transports: [ new (winston.transports.Console)({ 
+    transports: [ new (winston.transports.Console)({
       'level': level
-      'label': label 
+      'label': label
       'colorize': true
     }) ]
   }
@@ -165,6 +165,7 @@ exports.setup_obj_store_and_caching = (obj_name, lib_name, rclient, logger, obj_
   global[lib_name]["get_#{obj_name}"] = get_object
   global[lib_name]["search_#{obj_name}"] = search_object
   global[lib_name]["find_#{obj_name}"] = find_object
+  global[lib_name]["cache_#{obj_name}"] = cache_object
 
   # Setup cache refresher
 
@@ -222,6 +223,6 @@ exports.setup_obj_store = (obj_name, lib_name, rclient, logger, obj_ttl, get_one
     rclient.multi()
     .set "#{obj_name}:#{id}", JSON.stringify obj
     .expire "#{obj_name}:#{id}", obj_ttl.asSeconds()
-    .execAsync()  
+    .execAsync()
 
   global[lib_name]["get_#{obj_name}"] = get_object
